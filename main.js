@@ -10,73 +10,101 @@ function boardGame() {
         board[i] = [];
         for (let j = 0; j < columns; j++) {
             // Cell() will be defined later
-            board[j].push(Cell());
+            board[i].push(Cell());
         }
     }
-}
+    
+    // This will be used to call the board
+    const getBoard = () => board;
 
-// This will be used to call the board
-const getBoard = () => board;
+    const availableSquares = (column, player) => {
+        const emptySquares = board.filter((row) => row[column].getValue() === '').map(row => row[column]);
 
-// This gives players their name and score
-// Along with also keeping track of how many players were created
-function createPlayer(name) {
-    const userName = name;
-    let hasBeenCalledTwice = false;
-    let counter = 0;
-    const icon = ['X', 'O'];
-  
-    // Loop to keep track how many times function has been called
-    // Along with assigning letter, either X or O
-    for (let i = 0; i < 3; i++) {
-        counter++
-        if (counter === 1) {
-            icon[0];
-            console.log('Player was created!');
-        } else if (counter === 2) {
-            icon[1];
-            console.log('Player Was Created')
-        } else if (counter >= 3) {
-            console.log('Only two players can be created');
-            hasBeenCalledTwice = true;
-        }
+        if (!availableSquares.length) return;
+
+        board[availableSquares][column][row].addIcon(player);
     }
 
-    // Player Score
-    let userScore = 0;
-    const getUserScore = () => userScore;
-    const giveUserScore = () => userScore++;
+    const generateBoard = () => {
+        const boardWithCellValues = board.map((row) => row.map((cell) => cell.getValue()))
+        console.log(boardWithCellValues);
+    };
 
-    return {name, counter, icon, userName, getUserScore, giveUserScore};
-
+    return {getBoard, availableSquares, generateBoard};
 }
 
-const steven = createPlayer('steven');
+function Cell() {
+    let value = '';
 
-steven.giveUserScore();
+    const addIcon = (player) => {
+        value = player;
+    };
 
-console.log({
-    userName: steven.userName,
-    userScore: steven.getUserScore(),
-    counter: steven.counter,
-    icon: steven.icon
-});
-// // Assigning players their respective value: X and O.
-// function assignPlayerValue() {
-//     return Player.map((player, index) => {
-//         return {name: player, number: index + 1};
-//     });
-// }
+    const getValue = () => value;
 
-// const playersWithValue = assignPlayerValue(Player);
-
-// playersWithValue.forEach(player => {
-//     const playerTitle = document.createElement('h1');
-//     playerTitle.textContent = `It's ${player.name}'s turn.`;
-//     // Append child to div here later
-// });
+    return {addIcon, getValue};
+}
 
 // Game Controller for how game will play out
-function gameController(playerOneName = createPlayer(), playerTwoName) {
+function gameController(playerOneName = 'Player One', playerTwoName = 'Player Two') {
+// Calls grid where game is played one
+    const board = boardGame();
+
+    // Creates players
+    const players = [
+        {
+            name: playerOneName,
+            icon: 'X',
+            isActive: true
+        },
+        {
+            name: playerTwoName,
+            icon: 'O',
+            isActive: false
+        }
+    ];
+
+    // Checks to see which player is the active one
+    const findActivePlayer = (players) => {
+        return players.find(player => player.isActive);
+    }
+
+    const switchTurn = (players) => {
+        let currentIndex = players.findIndex(player => player.isActive);
+
+        players[currentIndex].isActive = false;
+
+        let nextIndex = (currentIndex + 1) % players.length;
+
+        players[nextIndex].isActive = true;
+    }
+
+    let activePlayer = findActivePlayer(players);
+    if (activePlayer) {
+        const status = document.querySelector('.player-title');
+        status.textContent = 'It is: ' + activePlayer + 's ' + 'turn.';
+        console.log('It is: ' + activePlayer + 's' + ' turn');
+    } else {
+        console.log('No players right now');
+    }
+
+    const newRound = () => {
+        board.generateBoard();
+        console.log(`${findActivePlayer().name}s turn.`);
+    };
+
+    const playRound = (column) => {
+        console.log(`Placing ${findActivePlayer().icon}`);
+        board.availableSquares(column, findActivePlayer().icon);
+
+        switchTurn();
+        newRound();
+    }
+
+    newRound();
+
+    return {playRound, findActivePlayer};
 
 }
+
+const game = gameController();
